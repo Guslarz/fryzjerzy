@@ -2,6 +2,7 @@
 #include "waitingRoom/waitingRoom.h"
 #include "moneyTransfer/moneyTransfer.h"
 #include "chairs/chairs.h"
+#include "cashRegister/cashRegister.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -21,6 +22,7 @@ int main()
     initWaitingRoom();
     initMoneyTransfer();
     initChairs();
+    initCashRegister();
     initProcesses();
     endProcesses();
     clearIPC();
@@ -75,4 +77,6 @@ void endProcesses()
 void clearIPC()
 {
     clearWaitingRoom();
+    clearChairs();
+    clearMoneyTransfer();
 }

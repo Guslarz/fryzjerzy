@@ -1,6 +1,7 @@
 #include "waitingRoom/waitingRoom.h"
 #include "moneyTransfer/moneyTransfer.h"
 #include "chairs/chairs.h"
+#include "cashRegister/cashRegister.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -21,6 +22,7 @@ int main(int argc, char **argv)
     getAccessToWaitingRoom();
     getAccessToMoneyTransfer();
     getAccessToChairs();
+    getAccessToCashRegister();
 
     while (1) {
         clientID = getNextClient();

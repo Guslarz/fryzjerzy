@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 
-int shmID, barberSemID, clientSemID;   
+int barberSemID, clientSemID;   
 Money *transaction;
 
 
@@ -18,6 +18,8 @@ void unlock(int, int);
 
 void getAccessToMoneyTransfer()
 {
+    int shmID;
+
     if ((shmID = shmget(TRANSFER_SHM_KEY, 
     sizeof(Money) * CLIENT_COUNT,
     IPC_CREAT|0600)) == -1) {

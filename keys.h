@@ -1,0 +1,12 @@
+#ifndef KEYS_H
+#define KEYS_H
+
+#define WAITING_ROOM_KEY 1234
+#define CHAIRS_KEY 1235
+
+#define TRANSFER_SHM_KEY 1234
+
+#define TRANSFER_BARBER_SEM_KEY 1234
+#define TRANSFER_CLIENT_SEM_KEY 1235
+
+#endif

@@ -1,0 +1,47 @@
+#include "money.h"
+
+#include <stdio.h>
+
+
+void addMoney(Money *target, const Money *amount)
+{
+    target->count1 += amount->count1;
+    target->count2 += amount->count2;
+    target->count5 += amount->count5;
+    target->sum += amount->sum;
+}
+
+
+void subtractMoney(Money *target, const Money *amount)
+{
+    target->count1 -= amount->count1;
+    target->count2 -= amount->count2;
+    target->count5 -= amount->count5;
+    target->sum -= amount->sum;
+}
+
+
+void resetMoney(Money *target)
+{
+    target->count1 = 0;
+    target->count2 = 0;
+    target->count5 = 0;
+    target->sum = 0;
+}
+
+
+void copyMoney(Money *target, const Money *amount)
+{
+    target->count1 = amount->count1;
+    target->count2 = amount->count2;
+    target->count5 = amount->count5;
+    target->sum = amount->sum;
+}
+
+
+void printMoney(const Money *money)
+{
+    printf("Suma: %d\t1: %d\t2: %d\t5: %d\n",
+        money->count1, money->count2, money->count5,
+        money->sum);
+}

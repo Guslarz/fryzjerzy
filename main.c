@@ -62,8 +62,24 @@ void initProcesses()
 
 void endProcesses()
 {
-    pid_t firstEnded = wait(NULL);
+	int status;
+    pid_t firstEnded = wait(&status);
     size_t i;
+	
+	switch(status >> 8) {
+	case 0:
+		printf("Wydano reszte %d klientom\n", CLIENTS_TO_BE_SERVED);
+		break;
+	case 1:
+		printf("Blad procesu\n");
+		break;
+	case 2:
+		printf("Wszyscy fryzjerzy czekaja na reszte\n");
+		break;
+	default:
+		printf("Undefined\n");
+		break;
+	}
 
     for (i = 0; i < BARBER_COUNT + CLIENT_COUNT; ++i)
         if (pid[i] != firstEnded)

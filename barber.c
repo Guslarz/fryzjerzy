@@ -4,6 +4,7 @@
 #include "cashRegister/cashRegister.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 
@@ -15,10 +16,16 @@ void cutHair(size_t);
 
 int main(int argc, char **argv)
 {
-    size_t clientID;
+    size_t id, clientID;
     long chairNumber;
     Money money = {0, 0, 0};
+	
+	if (argc < 2) {
+		perror("Za malo argumentow (fryzjer)");
+		exit(1);
+	}
 
+	id = itoa(argv[1]);
     getAccessToWaitingRoom();
     getAccessToMoneyTransfer();
     getAccessToChairs();
@@ -28,9 +35,10 @@ int main(int argc, char **argv)
         clientID = getNextClient();
         chairNumber = takeChair();
         getMoneyForService(clientID, &money);
-        //do kasy
+        putMoneyToCashRegister(&money);
         cutHair(clientID);
         returnChair(chairNumber);
+		getChangeFromCashRegister(&money);
         giveChange(clientID, &money);
     }
 }

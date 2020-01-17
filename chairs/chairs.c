@@ -69,7 +69,7 @@ void initChairs()
     }
 
     for (long i = 0; i < CHAIR_COUNT; ++i) {
-        buffer.number = i;
+        buffer.number = i + 1;
         addChair(&buffer);
     }
 }

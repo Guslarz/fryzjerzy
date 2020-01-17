@@ -39,6 +39,15 @@ void copyMoney(Money *target, const Money *amount)
 }
 
 
+void initMoney(Money *target, int count1, int count2, int count5)
+{
+	target->count1 = count1;
+	target->count2 = count2;
+	target->count5 = count5;
+	target->sum = count1 + count2 + count5;
+}
+
+
 void printMoney(const Money *money)
 {
     printf("Suma: %d\t1: %d\t2: %d\t5: %d\n",

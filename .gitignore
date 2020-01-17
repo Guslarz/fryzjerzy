@@ -1,3 +1,5 @@
 .vscode
 run
+barber
+client
 *.o

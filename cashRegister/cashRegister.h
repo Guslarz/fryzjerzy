@@ -13,5 +13,8 @@ void clearCashRegister();
 /*
  *  FOR BARBER
  */
+void putMoneyToCashRegister(const Money*);
+void getChangeFromCashRegister(Money*);
+ 
 
 #endif

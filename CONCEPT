@@ -30,7 +30,7 @@ Procesy potomne działają jako osobne programy uruchamiane z jednym argumentem,
 
 2.1	FRYZJERZY
 2.1.1	ID
-Numer `id` przekazywany programowi fryzjera służy jedynie do wstawiania do komunikatów.
+Numer `id` przekazywany programowi fryzjera służy do wstawiania do komunikatów i jako indeks fryzjera.
 
 2.1.2	STRUKTURY IPC
 Procesowi fryzjera należy zapewnić dostęp do struktur reprezentujących poczekalnię, wymianę pieniędzy, fotele i kasę.
@@ -97,5 +97,25 @@ Operacja ta wiąże się jedynie z podniesieniem semafora klienta.
 Klient opuszcza swój semafor, umieszcza opłatę w pamięci współdzielonej i podnosi semafor fryzjera. Klient przekazuje całe swoje zgromadzone pieniądze.
 
 3.4.3	POBRANIE OPŁATY ZA USŁUGĘ
-Fryzjer opuszcza swój semafor i pobiera informację o kwocie z pamięci współdzielonej
+Fryzjer opuszcza swój semafor i pobiera informację o kwocie z pamięci współdzielonej.
 
+3.4.4	WYDANIE RESZTY
+Fryzjer umieszcza w pamięci współdzielonej resztę pobraną z kasy i podnosi semafor klienta.
+
+3.4.5	ODEBRANIE RESZTY
+Klient blokuje swój semafor i dodaje sobie pieniądze z pamięci współdzielonej.
+
+3.5	KASA
+Na kasę składa się semafor, i pamięć współdzielona, a w niej:
+- pojedyńcza struktura `Money` reprezentująca zawartość kasy
+- zmienna zawierająca licznik wydanych reszt
+- tablica typu bool o rozmiarze `BARBER_COUNT`, określająca czy dany fryzjer próbował już pobrać resztę, fryzjerowi odpowiada element o indeksie równym jego `id`
+
+3.5.1	ODKŁADANIE OPŁATY
+Fryzjer opuszcza semafor, dodaje pieniądze wzięte od klienta, resetuje informacje o próbie wydania reszty dla wszystkich fryzjerów i podnosi semafor.
+
+3.5.2	POBIERANIE RESZTY
+Funkcja pobierania reszty jest dość specjalna, ponieważ w dwóch przypadkach, poza obsługą błędów, kończy proces wykonującego ją fryzjera:
+- gdy wydano resztę liczbę razy określoną przez `CLIENTS_TO_BE_SERVED`
+- gdy fryzjer nie jest w stanie wydać reszty, a wszyscy inni już próbowali, więc dalsza praca programu nic nie zmieni
+Jeśli fryzjer nie może wydać reszty, ale nie kończy działania działa w pętli tak długo, jak długo żaden inny fryzjer nie odłoży kolejnej wpłaty do kasy. Wszystko poza sprawdzaniem tego wartunku zabezpieczone jest przez semafor, a fryzjer działa w pętli, tak długo, aż mu się nie uda.

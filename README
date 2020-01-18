@@ -5,10 +5,10 @@ Stanisław Kaczmarek
 
 
 1.	KOMPILACJA
-Do kompilacji służy plik Makefile, sam proces uruchamiany jest poleceniem `make` lub `make all`.
+Do kompilacji służy plik Makefile, sam proces uruchamiany jest poleceniem `make` lub `make all`. Dodatkowo polecenie `make clean` usuwa wszystkie pliki binarne.
 
 2.	URUCHOMIENIE
-Głównym plikiem wynikowym projektu jest plik `run`, a więc program uruchamia się po wpisaniu `./run`.
+Głównym plikiem wynikowym projektu jest plik `run`, a więc program uruchamia się po wpisaniu `./run`. 
 
 3.	OPIS PLIKÓW Z KODEM
 - `main.c`		główny plik, reprezentujący proces macierzysty, inicjalizujący współdzielone struktury danych i tworzący procesy potomne

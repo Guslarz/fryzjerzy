@@ -45,12 +45,14 @@ int main(int argc, char **argv)
 		printf("Fryzjer %zu przyjmuje platnosc\n", id);
         putMoneyToCashRegister(&money);
 		printf("Fryzjer %zu wplaca do kasy\n", id);
+		printCashRegister();
         cutHair();
 		printf("Fryzjer %zu obcina klienta %zu\n", id, clientID);
         returnChair(chairNumber);
 		printf("Fryzjer %zu zwalnia fotel %zu\n", id, chairNumber);
-		getChangeFromCashRegister(&money);
+		getChangeFromCashRegister(id, &money);
 		printf("Fryzjer %zu pobiera reszte\n", id);
+		printCashRegister();
         giveChange(clientID, &money);
 		printf("Fryzjer %zu wydaje reszte\n", id);
     }

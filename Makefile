@@ -37,4 +37,4 @@ cashRegister/cashRegister.h
 	-c -o cashRegister.o -Wall
 
 clean:
-	rm -f *.o run
+	rm -f *.o run barber client

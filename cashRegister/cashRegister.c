@@ -7,23 +7,22 @@
 #include <sys/sem.h>
 #include <stdio.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <stdbool.h>
 
 
-int accessSemID, notAllSemID;
+int cashRegisterSemID;
 Money *storedMoney;
 int *changeCounter;
+bool *tried;
 
 
-void lockCashRegister();
-void unlockCashRegister();
+bool allTried();
 bool fillChange(Money*, int);
 
 
 void getAccessToCashRegister()
 {
-    int cashRegisterShmID, changeCounterSemID;
+    int cashRegisterShmID, changeCounterShmID, triedShmID;
 
     if ((cashRegisterShmID = shmget(CASH_REGISTER_SHM_KEY, sizeof(Money), 
     IPC_CREAT|0600)) == -1) {
@@ -36,29 +35,34 @@ void getAccessToCashRegister()
         exit(1);
     }
 	
-	if ((changeCounterSemID = shmget(CHANGE_COUNTER_SHM_KEY, sizeof(int),
+	if ((changeCounterShmID = shmget(CHANGE_COUNTER_SHM_KEY, sizeof(int),
 	IPC_CREAT|0600)) == -1) {
 		perror("Dostep do licznika wydanej reszty");
 		exit(1);
 	}
-	if ((changeCounter = (int*)shmat(changeCounterSemID,
+	if ((changeCounter = (int*)shmat(changeCounterShmID,
 	NULL, 0)) == NULL) {
 		perror("Przylaczenie licznika wydanej reszty");
 		exit(1);
 	}
+	
+	if ((triedShmID = shmget(TRIED_SHM_KEY, sizeof(bool) * BARBER_COUNT,
+	IPC_CREAT|0600)) == -1) {
+		perror("Dostep do prob wydania reszty");
+		exit(1);
+	}
+	if ((tried = (bool*)shmat(triedShmID,
+	NULL, 0)) == NULL) {
+		perror("Przylaczenie prob wydania reszty");
+		exit(1);
+	}
 
-    if ((accessSemID = semget(CASH_REGISTER_ACCESS_SEM_KEY, 1,
+    if ((cashRegisterSemID = semget(CASH_REGISTER_SEM_KEY, 1,
     IPC_CREAT|0600)) == -1) {
-        perror("Dostep do semafora dostepu do kasy");
-        exit(1);
-    }
-    if ((notAllSemID = semget(CASH_REGISTER_NOT_ALL_SEM_KEY, 1, 
-    IPC_CREAT|0600)) == -1) {
-        perror("Dostep do semafora nie wszystkich przy kasie");
+        perror("Dostep do semafora kasy");
         exit(1);
     }
 }
-
 
 void initCashRegister()
 {
@@ -66,14 +70,11 @@ void initCashRegister()
 
     resetMoney(storedMoney);
 	changeCounter[0] = 0;
+	for (size_t i = 0; i < BARBER_COUNT; ++i)
+		tried[i] = false;
 
-    if (semctl(accessSemID, 0, SETVAL, 1) == -1) {
-        perror("Przypianie wartosci semaforowi dostepu do kasy");
-        exit(1);
-    }
-    if (semctl(notAllSemID, 0, SETVAL, BARBER_COUNT - 1) == -1) {
-        perror("Przypisanie wartosic semaforowi"\
-        " nie wszystkich przy kasie");
+    if (semctl(cashRegisterSemID, 0, SETVAL, 1) == -1) {
+        perror("Przypianie wartosci semaforowi kasy");
         exit(1);
     }
 }
@@ -85,41 +86,37 @@ void clearCashRegister()
 }
 
 
-void lockCashRegister()
+void printCashRegister()
 {
-	struct sembuf buf;
-	
-	buf.sem_num = 0;
-	buf.sem_op = -1;
-	buf.sem_flg = 0;
-	
-	if (semop(accessSemID, &buf, 1) == -1) {
-        perror("Opuszczenie semafora kasy");
-        exit(1);
-    }
-}
-
-
-void unlockCashRegister()
-{
-	struct sembuf buf;
-	
-	buf.sem_num = 0;
-	buf.sem_op = 1;
-	buf.sem_flg = 0;
-	
-	if (semop(accessSemID, &buf, 1) == -1) {
-        perror("Podniesienie semafora kasy");
-        exit(1);
-    }
+	printMoney(storedMoney);
 }
 
 
 void putMoneyToCashRegister(const Money *money)
 {
-	lockCashRegister(accessSemID);
+	struct sembuf buf = {0, -1, 0};
+	if (semop(cashRegisterSemID, &buf, 1) == -1) {
+        perror("Opuszczenie semafora kasy przy wplacie");
+        exit(1);
+    }
+	
 	addMoney(storedMoney, money);
-	unlockCashRegister(accessSemID);
+	for (size_t i = 0; i < BARBER_COUNT; ++i)
+		tried[i] = false;
+	
+	buf.sem_op = 1;
+	if (semop(cashRegisterSemID, &buf, 1) == -1) {
+        perror("Podniesienie semafora kasy przy wplacie");
+        exit(1);
+    }
+}
+
+
+bool allTried()
+{
+	for (size_t i = 0; i < BARBER_COUNT; ++i)
+		if (!tried[i]) return false;
+	return true;
 }
 
 
@@ -151,56 +148,41 @@ bool fillChange(Money *money, int sum)
 }
 
 
-void getChangeFromCashRegister(Money *money)
+void getChangeFromCashRegister(size_t id, Money *money)
 {
-	struct sembuf buf;
+	struct sembuf buf = {0, 0, 0};
 	Money change;
 	
 	while (1) {
-		lockCashRegister();
-		
-		buf.sem_num = 0;
 		buf.sem_op = -1;
-		buf.sem_flg = IPC_NOWAIT;
+		if (semop(cashRegisterSemID, &buf, 1) == -1) {
+			perror("Opuszczenie semafora kasy");
+			exit(1);
+		}
+		tried[id] = true;
 		
-		if (semop(notAllSemID, &buf, 1) == -1) {
-			if (errno == EAGAIN) {
-				if (fillChange(&change, money->sum - SERVICE_PRICE)) {
-					copyMoney(money, &change);
-					break;
-				} else exit(2);
-			} else {
-				perror("Opuszczenie semafora notAll");
+		if (fillChange(&change, money->sum - SERVICE_PRICE)) {
+			if (++(*changeCounter) == CLIENTS_TO_BE_SERVED) exit(0);
+			tried[id] = false;
+			
+			buf.sem_op = 1;
+			if (semop(cashRegisterSemID, &buf, 1) == -1) {
+				perror("Podniesienie semafora kasy (sukces)");
 				exit(1);
 			}
+			
+			copyMoney(money, &change);
+			return;
 		} else {
-			if (fillChange(&change, money->sum - SERVICE_PRICE)) {
-				copyMoney(money, &change);
-				
-				buf.sem_op = 1;
-				buf.sem_flg = 0;
-				
-				if (semop(notAllSemID, &buf, 1) == -1) {
-					perror("Podniesienie semafora notAll");
-					exit(1);
-				}
-				break;
-			} else {
-				buf.sem_op = 1;
-				buf.sem_flg = 0;
-				
-				if (semop(notAllSemID, &buf, 1) == -1) {
-					perror("Podniesienie semafora notAll");
-					exit(1);
-				}
-				
-				unlockCashRegister();
+			if (allTried()) exit(2);
+			
+			buf.sem_op = 1;
+			if (semop(cashRegisterSemID, &buf, 1) == -1) {
+				perror("Podniesienie semafora kasy (porazka)");
+				exit(1);
 			}
+			
+			while (tried[id]);
 		}
 	}
-	
-	if (++(*changeCounter) == CLIENTS_TO_BE_SERVED)
-		exit(0);
-	
-	unlockCashRegister();
 }

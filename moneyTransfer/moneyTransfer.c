@@ -129,5 +129,4 @@ void takeChange(size_t id, Money *money)
 {
     lock(clientSemID, id);
     addMoney(money, transaction + id);
-    unlock(barberSemID, id);
 }

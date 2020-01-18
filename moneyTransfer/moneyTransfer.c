@@ -53,7 +53,7 @@ void initMoneyTransfer()
             perror("Semafor tranferu fryzjera");
             exit(1);
         }
-        if (semctl(clientSemID, i, SETVAL, 1) == -1) {
+        if (semctl(clientSemID, i, SETVAL, 0) == -1) {
             perror("Semafor transferu klienta");
             exit(1);
         }
@@ -97,6 +97,12 @@ void unlock(int semid, int semnum)
 }
 
 
+void letClientPay(size_t id)
+{
+	unlock(clientSemID, id);
+}
+
+
 void getMoneyForService(size_t id, Money *money)
 {
     lock(barberSemID, id);
@@ -105,8 +111,7 @@ void getMoneyForService(size_t id, Money *money)
 
 void giveChange(size_t id, const Money *money)
 {
-    lock(barberSemID, id);
-    copyMoney(transaction, money);
+    copyMoney(transaction + id, money);
     unlock(clientSemID, id);
 }
 

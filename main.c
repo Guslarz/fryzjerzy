@@ -18,7 +18,7 @@ void clearIPC();
 
 
 int main()
-{
+{	
     initWaitingRoom();
     initMoneyTransfer();
     initChairs();

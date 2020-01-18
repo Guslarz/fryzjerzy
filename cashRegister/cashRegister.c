@@ -118,7 +118,7 @@ void unlockCashRegister()
 void putMoneyToCashRegister(const Money *money)
 {
 	lockCashRegister(accessSemID);
-	copyMoney(storedMoney, money);
+	addMoney(storedMoney, money);
 	unlockCashRegister(accessSemID);
 }
 
@@ -130,14 +130,14 @@ bool fillChange(Money *money, int sum)
 	count5 = sum / 5;
 	if (count5 > storedMoney->count5)
 		count5 = storedMoney->count5;
-	sum -= count5;
+	sum -= count5 * 5;
 	
 	count2 = sum / 2;
 	if (count2 > storedMoney->count2)
 		count2 = storedMoney->count2;
-	sum -= count2;
+	sum -= count2 * 2;
 	
-	count1 = sum / 5;
+	count1 = sum;
 	if (count1 > storedMoney->count1)
 		count1 = storedMoney->count1;
 	sum -= count1;
@@ -157,10 +157,10 @@ void getChangeFromCashRegister(Money *money)
 	Money change;
 	
 	while (1) {
-		lockCashRegister(accessSemID);
+		lockCashRegister();
 		
 		buf.sem_num = 0;
-		buf.sem_op = 1;
+		buf.sem_op = -1;
 		buf.sem_flg = IPC_NOWAIT;
 		
 		if (semop(notAllSemID, &buf, 1) == -1) {
@@ -177,7 +177,7 @@ void getChangeFromCashRegister(Money *money)
 			if (fillChange(&change, money->sum - SERVICE_PRICE)) {
 				copyMoney(money, &change);
 				
-				buf.sem_op = -1;
+				buf.sem_op = 1;
 				buf.sem_flg = 0;
 				
 				if (semop(notAllSemID, &buf, 1) == -1) {
@@ -185,7 +185,17 @@ void getChangeFromCashRegister(Money *money)
 					exit(1);
 				}
 				break;
-			} else unlockCashRegister();
+			} else {
+				buf.sem_op = 1;
+				buf.sem_flg = 0;
+				
+				if (semop(notAllSemID, &buf, 1) == -1) {
+					perror("Podniesienie semafora notAll");
+					exit(1);
+				}
+				
+				unlockCashRegister();
+			}
 		}
 	}
 	

@@ -22,16 +22,31 @@ int main(int argc, char **argv)
         perror("Za malo argumentow (klient)");
         exit(1);
     }
-    id = atoi(argv[1]);
+	
+    id = atol(argv[1]);
+	
+	printf("Klient %zu\n", id);
+	
     getAccessToWaitingRoom();
     getAccessToMoneyTransfer();
 
     while (1) {
         earnMoney(&money);
-        if (!tryTakeEmptySeat(id))
+		printf("Klient %zu zarobil pieniadze\n", id);
+		fflush(stdout);
+        if (!tryTakeEmptySeat(id)) {
+			printf("Klient %zu nie zdolal zajac miejsca\n", id);
+			fflush(stdout);
             continue;
+		}
+		printf("Klient %zu zajal miejsce\n", id);
+		fflush(stdout);
         payForService(id, &money);
+		printf("Klient %zu zaplacil\n", id);
+		fflush(stdout);
         takeChange(id, &money);
+		printf("Klient %zu odebral reszte\n", id);
+		fflush(stdout);
     }
 }
 
@@ -39,9 +54,7 @@ int main(int argc, char **argv)
 void earnMoney(Money *money)
 {
     do {
-        money->count1 += SALARY_1;
-        money->count2 += SALARY_2;
-        money->count5 += SALARY_5;
+		addSalary(money);
         sleep(CLIENT_SLEEP);
     } while (money->sum < SERVICE_PRICE);
 }

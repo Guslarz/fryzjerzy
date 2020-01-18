@@ -13,6 +13,7 @@ void clearMoneyTransfer();
 /*
  *  FOR BARBER
  */
+void letClientPay(size_t);
 void getMoneyForService(size_t, Money*);
 void giveChange(size_t, const Money*);
 /*

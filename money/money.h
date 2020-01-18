@@ -8,6 +8,7 @@ typedef struct {
 
 
 void addMoney(Money*, const Money*);
+void addSalary(Money*);
 void subtractMoney(Money*, const Money*);
 void resetMoney(Money*);
 void copyMoney(Money*, const Money*);

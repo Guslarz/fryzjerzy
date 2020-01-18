@@ -1,4 +1,5 @@
 #include "money.h"
+#include "../params.h"
 
 #include <stdio.h>
 
@@ -9,6 +10,15 @@ void addMoney(Money *target, const Money *amount)
     target->count2 += amount->count2;
     target->count5 += amount->count5;
     target->sum += amount->sum;
+}
+
+
+void addSalary(Money *target)
+{
+	target->count1 += SALARY_1;
+	target->count2 += SALARY_2;
+	target->count5 += SALARY_5;
+	target->sum += SALARY_1 + SALARY_2 + SALARY_5;
 }
 
 

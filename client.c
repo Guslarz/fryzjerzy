@@ -25,7 +25,7 @@ int main(int argc, char **argv)
 	
     id = atol(argv[1]);
 	
-	printf("Klient %zu\n", id);
+	printf("Klient %zu rozpoczyna dzialanie\n", id);
 	
     getAccessToWaitingRoom();
     getAccessToMoneyTransfer();
@@ -33,20 +33,15 @@ int main(int argc, char **argv)
     while (1) {
         earnMoney(&money);
 		printf("Klient %zu zarobil pieniadze\n", id);
-		fflush(stdout);
         if (!tryTakeEmptySeat(id)) {
 			printf("Klient %zu nie zdolal zajac miejsca\n", id);
-			fflush(stdout);
             continue;
 		}
 		printf("Klient %zu zajal miejsce\n", id);
-		fflush(stdout);
         payForService(id, &money);
 		printf("Klient %zu zaplacil\n", id);
-		fflush(stdout);
         takeChange(id, &money);
 		printf("Klient %zu odebral reszte\n", id);
-		fflush(stdout);
     }
 }
 

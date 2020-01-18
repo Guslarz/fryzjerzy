@@ -1,0 +1,101 @@
+REALIZACJA ZADANIA `ŚPIĄCY FRYZJERZY-KASJERZY`
+
+Stanisław Kaczmarek
+141240	   grupa I5
+
+
+1.	PARAMETRY
+Parametry definiowane są jako makra w pliku `params.h`. Są to kolejno:
+- `BARBER_COUNT`	liczba fryjerów
+- `CHAIR_COUNT`		liczba foteli
+- `WAITING_ROOM_SEAT_COUNT`	liczba miejsc w poczekalni
+- `CLIENT_COUNT`	liczba klientów
+- `SERVICE_PRICE`	cena usługi
+- `SALARY_1`, `SALARY_2`, `SALARY_5`	kolejno ilość pieniędzy o nominałach 1, 2 i 5 zarabianych przez klienta za jednym razem
+- `CLIENTS_TO_BE_SERVED`	liczba klientów, którym wydana zostanie reszta, parametr pozwala zakończyć działanie programu w określonym momencie
+Dodatkowo plik `barber.c` zawiera makro `BARBER_SLEEP` odpowiadające czasowi poświęcanemu przez fryzjera na usługę strzyżenia, a `client.c` - `CLIENT_SLEEP` określające ile czasu zajmuje klientowi jednorazowe zarobienie pieniędzy.
+
+2.	PROCES MACIERZYSTY
+Proces macierzysty ma za zadanie zainicjować struktury służące do synchronizacji i procesy potomne. Następnie czeka aż któryś z procesów potomnych zakończy działanie po konćzy wszystkie pozostałe procesy poprzez wysłanie do nich sygnału 9 i czyści struktury IPC.
+
+2.1	ZAKOŃCZENIE PROCESÓW POTOMNYCH
+Gdy pierwszy z procesów potomnych zakończy działanie proces główny pobiera status zakończenia tego procesu. Interesuje go drugi najmłodszy bajt, jego wartość oznacza:
+- `0`	poprawne zakończenie, wydano resztę liczbie klientów określonej przez parametr `CLIENTS_TO_BE_SERVED`
+- `1`	proces zakończył się błędem
+- `2`	wszyscy fryzjerzy są przy kasie i żaden nie jest w stanie wydać reszty
+Program informuje użytkownika o powodzie zakończenia odpowiednim komunikatem.
+
+2.	PROCESY POTOMNE
+Procesy potomne działają jako osobne programy uruchamiane z jednym argumentem, określającym ich numer `id`. Jako, że są osobnymi programami muszą na początku swojego działania uzyskać dostęp do odpowiednich struktur IPC. Dodatkowo procesy te wypisują na wyjście komunikaty informujące o wykonywanych przez nie czynnościach. Dzieje się to jednak w większości poza funkcjami operującymi na strukturach synchronizacji, przez co kolejność komunikatów może odbiegać od rzeczywistej kolejności wykonywania funkcji. Rola komunikatów jest jednak czysto informacyjna, poprawność programu widać w jego działaniu.
+
+2.1	FRYZJERZY
+2.1.1	ID
+Numer `id` przekazywany programowi fryzjera służy jedynie do wstawiania do komunikatów.
+
+2.1.2	STRUKTURY IPC
+Procesowi fryzjera należy zapewnić dostęp do struktur reprezentujących poczekalnię, wymianę pieniędzy, fotele i kasę.
+
+2.1.3	DZIAŁANIE
+Fryzjer w nieskończonej pętli:
+- pobiera z poczekalni `id` klienta do obsłużenia
+- zajmuje fotel
+- pozwala klientowi zapłacić
+- pobiera pieniądze za usługę
+- przekazuje pieniądze do kasy
+- obcina klienta
+- zwalnia fotel
+- wydaje resztę
+
+2.1.4	OBCINANIE
+Obcinanie włosów nie wiąże się z jakąkolwiek zmianą stanu. Proces fryzjera wykonuje wtedy jedynie instrukcję `sleep` z parametrem określonym przez `BARBER_SLEEP`.
+
+2.2	KLIENCI
+2.2.1	ID
+Numer `id` klienta, poza wartością do komunikatów, wykorzystywany jest także jako indeks w tablicy (o czym dalej).
+
+2.2.2	STURKTURY IPC
+Strukturami do których klient potrzebuje dostępu są reprezentacja poczekalni i wymiany pieniędzy.
+
+2.2.3	DZIAŁANIE
+Do poprawnego funkcjonowania klient potrzebuje dodatkowo strukturę reprezentującą posiadane przez niego pieniądzę (struktura `Money`). Na początku nie posiada on żadnych pieniędzy. Działa w nieskończonej pętli, gdzie:
+- zarabia pieniądze
+- próbuje zająć miejsce w poczekalni, w przypadku niepowodzenia rozpoczyna nową iterację pętli - przechodzi ponownie do zarabiania pieniędzy
+- płaci za usługę
+- odbiera resztę
+
+2.2.4	ZARABIANIE PIENIĘDZY
+Zarabianie pięniędzy wykonuje się w pętli, tak długo, aż klienta nie stać na usługę obcięcia włosów, przy czym zawsze przynajmniej raz. Każda iteracja tej pętli to dodanie do posiadanych przez niego pieniędzy wartości określonych przez `SALARY_1`, `SALARY_2` i `SALARY_5` i wywołania funkcji `sleep` z argumentem `CLIENT_SLEEP`. Zapobiega to wejściu do poczekalni klienta ze zbyt małą ilością pieniędzy, a jednocześnie pozwala mu gromadzić środki, gdy poczakalnia jest pełna.
+
+3.	STRUKTURY
+Program napisany został w taki sposób, że działanie określonego elementu (np. poczekalni) znajduje się w osobnych plikach (w tym przypadku waitingRoom.c i waitingRoom.h), a pliki te oferują funkcje do operowania na danych strukturach.
+
+3.1	POCZEKALNIA
+Jak określono w treści zadania realizacja poczekalni ma opierać się o kolejkę komunikatów. Zrealizowana poczekalnia opiera się na komunikatach zawierających 2 wartości:
+- typ - określający czy dane miejsce jest puste (makro `EMPTY_SEAT`, wartość 1), czy zajęte (`TAKEN_SEAT`, 2)
+- id klienta - gdy miejsce jest zajęte zawiera `id` siedzącego na nim klienta, gdy wolne - wartość tego pola nas nie obchodzi
+Początkowo kolejka wypełniona jest komunikatami o typie `EMPTY_SEAT` w ilości określonej przez `WAITING_ROOM_SEAT_COUNT`.
+
+3.1.1	ZAJĘCIE MIEJSCA
+Klient próbuje zająć miejsce poprzez pobranie komunikatu typu `EMPTY_SEAT` z kolejki z ustawioną flagą `IPC_NOWAIT`. Pojawienie się błędu `ENOMSG` oznacza brak wolnych miejsc, w przeciwnym wypadku klient wstawia nowy komunikat typu `TAKEN_SEAT` zawierający jego numer `id`.
+
+3.1.2	POBRANIE KLIENTA
+Pobranie oczekującego klienta to oczywiście pobranie komunikatu typu `TAKEN_SEAT` i zapamiętanie wartości pola `id`. Po pobraniu należy uzupełnić kolejkę komunikatem typu `EMPTY_SEAT`.
+
+3.2	FOTELE
+Fotele (zajmowane przez fryzjerów) także zrealizowane zostały w oparciu o kolejkę komunikatów, gdzie komunikat zawiera jedynie jedno pole, określające numer fotela. Choć możnaby uprościć je do semafora o początkowej wartości równej ilości foteli `CHAIR_COUNT` odpowiednio zmniejszanej i zwiększanej, nie pozwalałoby to na posiadanie informacji który z foteli zostaje becnie zajęty. Operacja zajęcia fotela to pobranie dowolnego komunikatu, a zwolnienia - wstawienie komunikatu o takim samym numerze.
+
+3.3	PIENIĄDZE
+Poza kwotą, czy to posiadaną przez klienta lub w kasie, czy przekazywaną pomiędzy procesami, do opisu pieniędzy potrzebna była także informacja o ilości poszczególnych nominałów (1, 2, 5). Do tego celu powstała struktura `Money`.
+
+3.4	WYMIANA PIENIĘDZY
+Wymiana pieniędzy między procesami opiera się na współdzielonej tablicy struktur `Money` i dwóch tablicach semaforów, pierwszej ograniczającej dostęp fryzjera, drugiej - klienta. Wszstkie te tablice zawierają liczbę elementów określoną przez `CLIENT_COUNT`, a procesy korzystają z ich elementów pod indeksem który dla klienta jest jego własnym `id`, a dla fryzjera `id` obsługiwanego klienta (pobranym z poczekalni). Początkowo semafory mają wartość 0. Semafory dla klientów mogłyby początkowo mieć wartość 1, przypisałem im wartość 0 żeby podkreślić fakt pobierania opłaty przez fryzjera dopiero po zajęciu fotela.
+
+3.4.1	POZWOLENIE KLIENTOWI ZAPŁACIĆ
+Operacja ta wiąże się jedynie z podniesieniem semafora klienta.
+
+3.4.2	OPŁACENIE USŁUGI
+Klient opuszcza swój semafor, umieszcza opłatę w pamięci współdzielonej i podnosi semafor fryzjera. Klient przekazuje całe swoje zgromadzone pieniądze.
+
+3.4.3	POBRANIE OPŁATY ZA USŁUGĘ
+Fryzjer opuszcza swój semafor i pobiera informację o kwocie z pamięci współdzielonej
+

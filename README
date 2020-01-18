@@ -1,0 +1,23 @@
+ŚPIĄCY FRYZJERZY-KASJERZY
+
+Stanisław Kaczmarek
+141240	   grupa I5
+
+
+1.	KOMPILACJA
+Do kompilacji służy plik Makefile, sam proces uruchamiany jest poleceniem `make` lub `make all`.
+
+2.	URUCHOMIENIE
+Głównym plikiem wynikowym projektu jest plik `run`, a więc program uruchamia się po wpisaniu `./run`.
+
+3.	OPIS PLIKÓW Z KODEM
+- `main.c`		główny plik, reprezentujący proces macierzysty, inicjalizujący współdzielone struktury danych i tworzący procesy potomne
+- `barber.c`	realizacja procesu fryzjera
+- `client.c`	realizacja procesu klienta
+- `params.h`	wartości parametrów
+- `keys.h`		klucze wykorzystywane przy tworzeniu struktur IPC
+- `cashRegister/cashRegister.c`, `cashRegister/cashRegister.h`	działanie kasy
+- `chairs/charis.c`, `chairs/charis.h`	działanie foteli
+- `money/money.c`, `money/money.h`	struktura opisująca pieniądze
+- `moneyTransfer/moneyTransfer.c`, `moneyTransfer/moneyTransfer.h`	realizacja wymiany pieniędzy pomiędzy fryzjerami i kasjerami
+- `waitingRoom/waitingRoom.c`, `waitingRoom/waitingRoom.h`	działanie poczekalni
